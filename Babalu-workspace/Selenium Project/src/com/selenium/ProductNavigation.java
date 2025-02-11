@@ -3,8 +3,10 @@ package com.selenium;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
+import java.util.Set;
 
 public class ProductNavigation {
     public static void main(String[] args) {
@@ -15,7 +17,7 @@ public class ProductNavigation {
 
         try {
             // Open blank page first
-            driver.get("about:blank");
+//            driver.get("about:blank");
 
             // Inject JavaScript to set credentials and open Windchill
             String windchillURL = "http://swiftplm-pc-09.splm.com/Windchill/app/";
@@ -57,21 +59,77 @@ public class ProductNavigation {
             WebElement driveSystemLink = wait.until(ExpectedConditions.elementToBeClickable(By.linkText("Drive System")));
             driveSystemLink.click();
             System.out.println("Clicked on Drive System.");
+            
+            String mainWindowHandle = driver.getWindowHandle();
 
-            WebElement createButton = wait.until(ExpectedConditions.elementToBeClickable(
-             By.xpath("//*[@id=\"ext-gen360\"]")));
-            	createButton.click();
+            WebElement createButton = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div/div/div/div[2]/div[2]/div[1]/div/div/div/div[2]/div/div/div[2]/div/div/div/form/div/div/div/div/div[1]/div[2]/table/tbody/tr/td[1]/table/tbody/tr/td[2]/table/tbody/tr[2]/td[2]/em/button")));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();",createButton);
+
             	System.out.println("Clicked on Create button using XPath.");
+            	
+            	// Wait for the new window to open
+            	WebDriverWait waits = new WebDriverWait(driver, Duration.ofSeconds(10));
+            	waits.until(ExpectedConditions.numberOfWindowsToBe(2));
+
+            	// Get all window handles
+            	Set<String> allWindowHandles = driver.getWindowHandles();
+
+            	// Identify the new window handle
+            	String newWindowHandle = allWindowHandles.stream()
+            	    .filter(handle -> !handle.equals(mainWindowHandle))
+            	    .findFirst()
+            	    .orElseThrow(() -> new RuntimeException("New window not found"));
+
+            	// Switch to the new window
+            	driver.switchTo().window(newWindowHandle);
+            	System.out.println("Switched to the new window.");
+
+            	
+            	
+            	// Locate the dropdown
+            	WebElement dropdown = wait.until(ExpectedConditions.presenceOfElementLocated(
+            	    By.xpath("//*[@id=\"!~objectHandle~partHandle~!createType\"]")
+            	));
+
+            	// Create Select instance
+            	Select select = new Select(dropdown);
+
+            	// Select by visible text
+            	select.selectByVisibleText("Part");
+
+            	// Select by index (starting from 0)
+            	select.selectByIndex(6);
+
+            	WebDriverWait waitt = new WebDriverWait(driver, Duration.ofSeconds(10));
+            	WebElement nameField = waitt.until(ExpectedConditions.elementToBeClickable(By.name("tcomp$attributesTable$OR:wt.pdmlink.PDMLinkProduct:65687$___null!~objectHandle~partHandle~!_col_name___textbox")));
+            	nameField.sendKeys("NewPart1");
+
+            	WebElement Finish = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"ext-gen39\"]")));
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();",Finish);
+
+            	
+            	System.out.println("Part created successfully");
+            	
+            	JavascriptExecutor js= (JavascriptExecutor) driver;
+            	js.executeScript("alert('Part Created Successfully.!!');");
             
                  } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error occurred during the automation process.");
+            
         }
-//        }  finally {
-//            // Close the browser after execution
-//            driver.quit();
-//            System.out.println("Browser closed.");
-//        }
+          finally {
+            // Close the browser after execution
+              try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} // Giving time to see the created part on the web page.
+
+            driver.quit();
+            System.out.println("Browser closed.");
+        }
     }
     }
  
